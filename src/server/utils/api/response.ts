@@ -1,61 +1,46 @@
-import { HttpStatusCode } from "axios";
+import { HttpStatusCode } from 'axios';
 
-const DEFAULT_HEADER = {
-  "Content-Type": "application/json",
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "X-XSS-Protection": "1; mode=block",
-};
+class ApiResponse {
+  static readonly defaultHeaders = {
+    'Content-Type': 'application/json',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+  };
 
-export const responseJson = (
-  data: object,
-  code = HttpStatusCode.Ok,
-  headers = {}
-) => {
-  const json = JSON.stringify(data);
-  const response = new Response(json, {
-    status: code,
-    headers: { ...DEFAULT_HEADER, ...headers },
-  });
-  return response;
-};
+  static json = (body: any, statusCode = HttpStatusCode.Ok, headers = {}) => {
+    return new Response(JSON.stringify(body), {
+      status: statusCode,
+      headers: { ...ApiResponse.defaultHeaders, ...headers },
+    });
+  };
 
-export const responseMessage = (
-  message: string,
-  code = HttpStatusCode.Ok,
-  headers = {}
-) => {
-  const json = JSON.stringify({
-    message: message,
-  });
-  const response = new Response(json, {
-    status: code,
-    headers: { ...DEFAULT_HEADER, ...headers },
-  });
-  return response;
-};
+  static message(message: string, statusCode = HttpStatusCode.Ok, headers = {}) {
+    return new Response(JSON.stringify({
+      message,
+    }), {
+      status: statusCode,
+      headers: { ...ApiResponse.defaultHeaders, ...headers },
+    });
+  }
 
-export const responseRawData = (
-  rawString: string,
-  code = HttpStatusCode.Ok,
-  headers = {}
-) => {
-  const response = new Response(rawString, {
-    status: code,
-    headers: { ...DEFAULT_HEADER, ...headers },
-  });
-  return response;
-};
+  static raw(rawString: string, statusCode = HttpStatusCode.Ok, headers = {}) {
+    return new Response(String(rawString), {
+      status: statusCode,
+      headers: { ...ApiResponse.defaultHeaders, ...headers },
+    });
+  }
 
-export const responseRedirect = (
-  url: string,
-  code = HttpStatusCode.TemporaryRedirect,
-  headers = {}
-) => {
-  const response = new Response("", {
-    status: code,
-    headers: { ...headers },
-  });
-  response.headers.set("location", "url");
-  return response;
-};
+  static redirect(url: string, statusCode = HttpStatusCode.TemporaryRedirect, headers = {}) {
+    return new Response(String(url), {
+      status: statusCode,
+      headers: {
+        ...ApiResponse.defaultHeaders,
+        ...headers,
+        Location: String(url),
+      },
+    });
+  }
+}
+
+export default ApiResponse;

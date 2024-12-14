@@ -1,32 +1,34 @@
-import { HttpStatusCode } from "axios";
-import { responseMessage } from "./response";
-import { Message } from "../constants/message";
-import { SystemValidationError } from "../error";
-import { ValidationError } from "yup";
+import ApiResponse from './response';
+import connectMongo from '@/server/configs/mongo';
+import { HttpStatusCode } from 'axios';
+import { HttpError } from '@/shared/utils/errors/http-error';
+import { ValidationError } from 'yup';
+import { IHandler } from '@/server/utils/types/handler';
+import { logger } from '@/shared/utils/logger';
+import { Message } from '@/shared/utils/constants/message';
 
 const errorHandler = (error: Error) => {
-  if (error instanceof SystemValidationError) {
-    return responseMessage(error.message, error.statusCode);
+  if (error instanceof HttpError) {
+    return ApiResponse.message(error.message, error.statusCode);
   }
 
   if (error instanceof ValidationError) {
-    return responseMessage(error.message, HttpStatusCode.BadRequest);
+    return ApiResponse.message(error.message, HttpStatusCode.BadRequest);
   }
 
-  console.log(error);
-  return responseMessage(
-    Message.ERROR.INVALID_CREDENTIAL.TXT,
-    HttpStatusCode.Unauthorized
+  logger.error(error.message);
+  return ApiResponse.message(
+    Message.Error.InternalServerError.txt,
+    HttpStatusCode.InternalServerError,
   );
 };
 
-interface IHandler {
-  (req: Request): Promise<Response>;
-}
-
-export const withErrorHandling = (handler: IHandler) => {
+export const useErrorHandling = (handler: IHandler) => {
   return async (req: Request) => {
+    const requestCloned = req.clone();
+    logger.info(JSON.stringify(await requestCloned.json(), null, 2));
     try {
+      await connectMongo();
       return await handler(req);
     } catch (error: any) {
       return errorHandler(error);
